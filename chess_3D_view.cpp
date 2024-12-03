@@ -42,6 +42,7 @@ using namespace glm;
 // Lab3 specific chess class
 #include "chessComponent.h"
 #include "chessCommon.h"
+#include "helper_functions.hpp"
 
 // Sets up the chess board
 void setupChessBoard(tModelMap& cTModelMap);
@@ -223,14 +224,23 @@ int main( void )
     // For speed computation
     double lastTime = glfwGetTime();
     int nbFrames = 0;
-    char v;
+    std::string cmd;
+    std::vector<std::string> parsed_cmd;
 
     do{
       renderNextFrame();
-      std::cout << "Enter something: " << std::endl;
-      std::cin >> v;
-      std::cout << "I got " << v << std::endl;
-      lightSwitch = !lightSwitch;
+      std::cout << "Please enter a command: " << std::endl;
+      std::getline(std::cin, cmd);
+      parsed_cmd = parseInputCmd(cmd);
+      if (parsed_cmd[0] == "light")
+      {
+        if (parsed_cmd[1] == "1")
+            lightSwitch = true;
+        else if (parsed_cmd[1] == "0")
+            lightSwitch = false;
+        else
+            std::cout << "Invalid command or move" << std::endl;
+      }
 
     } // Check if the ESC key was pressed or the window was closed
     while( glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
