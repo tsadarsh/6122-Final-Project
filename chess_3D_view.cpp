@@ -53,6 +53,7 @@ GLuint ViewMatrixID;
 GLuint ModelMatrixID;
 GLuint LightID;
 GLuint TextureID;
+bool lightSwitch=true;
 
 void renderNextFrame()
 {
@@ -66,7 +67,7 @@ void renderNextFrame()
     glm::mat4 ViewMatrix = getViewMatrix();
 
     // Get light switch State (It's a toggle!)
-    bool lightSwitch = getLightSwitch();
+    // lightSwitch = getLightSwitch();
     // Pass it to Fragment Shader
     glUniform1i(LightSwitchID, static_cast<int>(lightSwitch));
 
@@ -222,9 +223,14 @@ int main( void )
     // For speed computation
     double lastTime = glfwGetTime();
     int nbFrames = 0;
+    char v;
 
     do{
       renderNextFrame();
+      std::cout << "Enter something: " << std::endl;
+      std::cin >> v;
+      std::cout << "I got " << v << std::endl;
+      lightSwitch = !lightSwitch;
 
     } // Check if the ESC key was pressed or the window was closed
     while( glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
