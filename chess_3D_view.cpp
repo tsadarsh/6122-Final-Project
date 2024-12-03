@@ -45,6 +45,72 @@ using namespace glm;
 
 // Sets up the chess board
 void setupChessBoard(tModelMap& cTModelMap);
+GLuint LightSwitchID;
+std::vector<chessComponent> gchessComponents;
+tModelMap cTModelMap;
+GLuint MatrixID;
+GLuint ViewMatrixID;
+GLuint ModelMatrixID;
+GLuint LightID;
+GLuint TextureID;
+
+void renderNextFrame()
+{
+
+    // Clear the screen
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // Compute the VP matrix from keyboard and mouse input
+    computeMatricesFromInputsLab3();
+    glm::mat4 ProjectionMatrix = getProjectionMatrix();
+    glm::mat4 ViewMatrix = getViewMatrix();
+
+    // Get light switch State (It's a toggle!)
+    bool lightSwitch = getLightSwitch();
+    // Pass it to Fragment Shader
+    glUniform1i(LightSwitchID, static_cast<int>(lightSwitch));
+
+    // Run through all the chess game components for rendering
+    for (auto cit = gchessComponents.begin(); cit != gchessComponents.end(); cit++)
+    {            
+        // Seach for mesh rendering targets and counts
+        tPosition cTPosition = cTModelMap[cit->getComponentID()];
+        
+        // Repeat for pair of players using repetition count
+        for (unsigned int pit = 0; pit < cTPosition.rCnt; pit++)
+        {
+            // Modify the X for player repetition
+            tPosition cTPositionMorph = cTPosition;
+            cTPositionMorph.tPos.x += pit * cTPosition.rDis * CHESS_BOX_SIZE;
+            // Pass it for Model matrix generation
+            glm::mat4 ModelMatrix = cit->genModelMatrix(cTPositionMorph);
+            // Genrate the MVP matrix
+            glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
+
+            // Send our transformation to the currently bound shader, 
+            // in the "MVP" uniform
+            glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
+            glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &ModelMatrix[0][0]);
+            glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &ViewMatrix[0][0]);
+
+            // Light is placed right on the top of the board
+            // with a decent height for good lighting across
+            // the board!
+            glm::vec3 lightPos = glm::vec3(0, 0, 15);
+            glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
+
+            // Bind our texture (set it up)
+            cit->setupTexture(TextureID);
+
+            // Render buffers
+            cit->renderMesh();
+        }
+    }
+
+    // Swap buffers
+    glfwSwapBuffers(window);
+    glfwPollEvents();
+}
 
 int main( void )
 {
@@ -109,19 +175,18 @@ int main( void )
     GLuint programID = LoadShaders( "StandardShading.vertexshader", "StandardShading.fragmentshader" );
 
     // Get a handle for our "MVP" uniform
-    GLuint MatrixID = glGetUniformLocation(programID, "MVP");
-    GLuint ViewMatrixID = glGetUniformLocation(programID, "V");
-    GLuint ModelMatrixID = glGetUniformLocation(programID, "M");
+    MatrixID = glGetUniformLocation(programID, "MVP");
+    ViewMatrixID = glGetUniformLocation(programID, "V");
+    ModelMatrixID = glGetUniformLocation(programID, "M");
 
     // Get a handle for our "myTextureSampler" uniform
-    GLuint TextureID  = glGetUniformLocation(programID, "myTextureSampler");
+    TextureID  = glGetUniformLocation(programID, "myTextureSampler");
 
     // Get a handle for our "lightToggleSwitch" uniform
-    GLuint LightSwitchID = glGetUniformLocation(programID, "lightSwitch");
+    LightSwitchID = glGetUniformLocation(programID, "lightSwitch");
 
     // Create a vector of chess components class
     // Each component is fully self sufficient
-    std::vector<chessComponent> gchessComponents;
 
     // Load the OBJ files
     bool cBoard = loadAssImpLab3("Lab3/Stone_Chess_Board/12951_Stone_Chess_Board_v1_L3.obj", gchessComponents);
@@ -136,7 +201,6 @@ int main( void )
     }
 
     // Setup the Chess board locations
-    tModelMap cTModelMap;
     setupChessBoard(cTModelMap);
 
     // Load it into a VBO (One time activity)
@@ -153,78 +217,14 @@ int main( void )
     glUseProgram(programID);
 
     // Get a handle for our "LightPosition" uniform
-    GLuint LightID = glGetUniformLocation(programID, "LightPosition_worldspace");
+    LightID = glGetUniformLocation(programID, "LightPosition_worldspace");
 
     // For speed computation
     double lastTime = glfwGetTime();
     int nbFrames = 0;
 
     do{
-        // Measure speed
-        double currentTime = glfwGetTime();
-        nbFrames++;
-
-        // If last prinf() was more than 1sec ago
-        if (currentTime - lastTime >= 1.0) { // If last prinf() was more than 1sec ago
-            // printf and reset
-            printf("%f ms/frame\n", 1000.0 / double(nbFrames));
-            nbFrames = 0;
-            lastTime += 1.0;
-        }
-
-        // Clear the screen
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        // Compute the VP matrix from keyboard and mouse input
-        computeMatricesFromInputsLab3();
-        glm::mat4 ProjectionMatrix = getProjectionMatrix();
-        glm::mat4 ViewMatrix = getViewMatrix();
-
-        // Get light switch State (It's a toggle!)
-        bool lightSwitch = getLightSwitch();
-        // Pass it to Fragment Shader
-        glUniform1i(LightSwitchID, static_cast<int>(lightSwitch));
-
-        // Run through all the chess game components for rendering
-        for (auto cit = gchessComponents.begin(); cit != gchessComponents.end(); cit++)
-        {            
-            // Seach for mesh rendering targets and counts
-            tPosition cTPosition = cTModelMap[cit->getComponentID()];
-            
-            // Repeat for pair of players using repetition count
-            for (unsigned int pit = 0; pit < cTPosition.rCnt; pit++)
-            {
-                // Modify the X for player repetition
-                tPosition cTPositionMorph = cTPosition;
-                cTPositionMorph.tPos.x += pit * cTPosition.rDis * CHESS_BOX_SIZE;
-                // Pass it for Model matrix generation
-                glm::mat4 ModelMatrix = cit->genModelMatrix(cTPositionMorph);
-                // Genrate the MVP matrix
-                glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
-
-                // Send our transformation to the currently bound shader, 
-                // in the "MVP" uniform
-                glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
-                glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &ModelMatrix[0][0]);
-                glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &ViewMatrix[0][0]);
-
-                // Light is placed right on the top of the board
-                // with a decent height for good lighting across
-                // the board!
-                glm::vec3 lightPos = glm::vec3(0, 0, 15);
-                glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
-
-                // Bind our texture (set it up)
-                cit->setupTexture(TextureID);
-
-                // Render buffers
-                cit->renderMesh();
-            }
-        }
-
-        // Swap buffers
-        glfwSwapBuffers(window);
-        glfwPollEvents();
+      renderNextFrame();
 
     } // Check if the ESC key was pressed or the window was closed
     while( glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
