@@ -58,6 +58,7 @@ GLuint TextureID;
 bool lightSwitch=true;
 float lightPower = 400.0;
 glm::mat4 newViewMatrix = getViewMatrix();
+glm::vec3 lightPos = glm::vec3(0, 0, 15);
 
 void renderNextFrame()
 {
@@ -101,7 +102,6 @@ void renderNextFrame()
             // Light is placed right on the top of the board
             // with a decent height for good lighting across
             // the board!
-            glm::vec3 lightPos = glm::vec3(0, 0, 15);
             glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
             glUniform1f(LightPowerID, lightPower);
 
@@ -246,12 +246,13 @@ int main( void )
         
         if (parsed_cmd[0] == "light")
         {
-            if (parsed_cmd[1] == "1")
-                lightSwitch = true;
-            else if (parsed_cmd[1] == "0")
-                lightSwitch = false;
-            else
-                std::cout << "Invalid command or move" << std::endl;
+            float theta = std::stof(parsed_cmd[1]);
+            float phi = std::stof(parsed_cmd[2]);
+            float r = std::stof(parsed_cmd[3]);
+            float posX = r * sin(glm::radians(theta)) * cos(glm::radians(phi));
+            float posY = r * sin(glm::radians(theta)) * sin(glm::radians(phi));
+            float posZ = r * cos(glm::radians(theta));
+            lightPos = glm::vec3(posX, posY, posZ);
         }
         else if (parsed_cmd[0] == "power")
         {
@@ -272,6 +273,8 @@ int main( void )
                 glm::vec3(0, 0, 1)                  // Look in the z-direction (set to 0,0,1 to look upside-down)
             );
         }
+        else
+            std::cout << "Invalid command or move!!" << std::endl;
 
     } // Check if the ESC key was pressed or the window was closed
     while( glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
