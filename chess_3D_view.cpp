@@ -57,6 +57,7 @@ GLuint LightID;
 GLuint TextureID;
 bool lightSwitch=true;
 float lightPower = 400.0;
+glm::mat4 newViewMatrix = getViewMatrix();
 
 void renderNextFrame()
 {
@@ -67,7 +68,7 @@ void renderNextFrame()
     // Compute the VP matrix from keyboard and mouse input
     computeMatricesFromInputsLab3();
     glm::mat4 ProjectionMatrix = getProjectionMatrix();
-    glm::mat4 ViewMatrix = getViewMatrix();
+    // newViewMatrix = getViewMatrix();
 
     // Get light switch State (It's a toggle!)
     // lightSwitch = getLightSwitch();
@@ -89,13 +90,13 @@ void renderNextFrame()
             // Pass it for Model matrix generation
             glm::mat4 ModelMatrix = cit->genModelMatrix(cTPositionMorph);
             // Genrate the MVP matrix
-            glm::mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
+            glm::mat4 MVP = ProjectionMatrix * newViewMatrix * ModelMatrix;
 
             // Send our transformation to the currently bound shader, 
             // in the "MVP" uniform
             glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
             glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &ModelMatrix[0][0]);
-            glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &ViewMatrix[0][0]);
+            glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &newViewMatrix[0][0]);
 
             // Light is placed right on the top of the board
             // with a decent height for good lighting across
@@ -155,11 +156,11 @@ int main( void )
     // Ensure we can capture the escape key being pressed below
     glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
     // Hide the mouse and enable unlimited movement
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     
     // Set the mouse at the center of the screen
     glfwPollEvents();
-    glfwSetCursorPos(window, 1024/2, 768/2);
+    // glfwSetCursorPos(window, 1024/2, 768/2);
 
     // Dark blue background
     glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
@@ -230,10 +231,14 @@ int main( void )
     int nbFrames = 0;
     std::string cmd;
     std::vector<std::string> parsed_cmd;
-
+    newViewMatrix = glm::lookAt(
+                glm::vec3(10, 10, 10),                           // Camera is here
+                glm::vec3(0, 0, 0),                 // and looks here : at the same position, plus "direction"
+                glm::vec3(0, 0, 1)                  // Look in the z-direction (set to 0,0,1 to look upside-down)
+            );
     do
     {
-        renderNextFrame();
+       renderNextFrame();
         
         std::cout << "Please enter a command: " << std::endl;
         std::getline(std::cin, cmd);
@@ -251,6 +256,21 @@ int main( void )
         else if (parsed_cmd[0] == "power")
         {
             lightPower = std::stof(parsed_cmd[1]);
+        }
+        else if (parsed_cmd[0] == "camera")
+        {
+            float theta = std::stof(parsed_cmd[1]);
+            float phi = std::stof(parsed_cmd[2]);
+            float r = std::stof(parsed_cmd[3]);
+            float posX = r * sin(glm::radians(theta)) * cos(glm::radians(phi));
+            float posY = r * sin(glm::radians(theta)) * sin(glm::radians(phi));
+            float posZ = r * cos(glm::radians(theta));
+            glm::vec3 position = glm::vec3(posX, posY, posZ);
+            newViewMatrix = glm::lookAt(
+                position,                           // Camera is here
+                glm::vec3(0, 0, 0),                 // and looks here : at the same position, plus "direction"
+                glm::vec3(0, 0, 1)                  // Look in the z-direction (set to 0,0,1 to look upside-down)
+            );
         }
 
     } // Check if the ESC key was pressed or the window was closed
