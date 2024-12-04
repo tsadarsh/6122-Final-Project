@@ -248,48 +248,56 @@ int main( void )
         std::getline(std::cin, cmd);
         parsed_cmd = parseInputCmd(cmd);
         
-        if (parsed_cmd[0] == "light")
+        try
         {
-            float theta = std::stof(parsed_cmd[1]);
-            float phi = std::stof(parsed_cmd[2]);
-            float r = std::stof(parsed_cmd[3]);
-            float posX = r * sin(glm::radians(theta)) * cos(glm::radians(phi));
-            float posY = r * sin(glm::radians(theta)) * sin(glm::radians(phi));
-            float posZ = r * cos(glm::radians(theta));
-            lightPos = glm::vec3(posX, posY, posZ);
-        }
-        else if (parsed_cmd[0] == "power")
-        {
-            lightPower = std::stof(parsed_cmd[1]);
-        }
-        else if (parsed_cmd[0] == "camera")
-        {
-            float theta = std::stof(parsed_cmd[1]);
-            float phi = std::stof(parsed_cmd[2]);
-            float r = std::stof(parsed_cmd[3]);
-            float posX = r * sin(glm::radians(theta)) * cos(glm::radians(phi));
-            float posY = r * sin(glm::radians(theta)) * sin(glm::radians(phi));
-            float posZ = r * cos(glm::radians(theta));
-            glm::vec3 position = glm::vec3(posX, posY, posZ);
-            newViewMatrix = glm::lookAt(
-                position,                           // Camera is here
-                glm::vec3(0, 0, 0),                 // and looks here : at the same position, plus "direction"
-                glm::vec3(0, 0, 1)                  // Look in the z-direction (set to 0,0,1 to look upside-down)
-            );
-        }
-        else if (parsed_cmd[0] == "quit")
-            return 0;
-        else if (parsed_cmd[0] == "move")
-        {
-            std::string allmoves;
-            for (int i = 1; i < parsed_cmd.size(); i++)
+            if (parsed_cmd[0] == "light")
             {
-                allmoves += " " + parsed_cmd[i];
+                float theta = std::stof(parsed_cmd[1]);
+                float phi = std::stof(parsed_cmd[2]);
+                float r = std::stof(parsed_cmd[3]);
+                float posX = r * sin(glm::radians(theta)) * cos(glm::radians(phi));
+                float posY = r * sin(glm::radians(theta)) * sin(glm::radians(phi));
+                float posZ = r * cos(glm::radians(theta));
+                lightPos = glm::vec3(posX, posY, posZ);
             }
-            engine.sendMove(allmoves);
+            else if (parsed_cmd[0] == "power")
+            {
+                lightPower = std::stof(parsed_cmd[1]);
+            }
+            else if (parsed_cmd[0] == "camera")
+            {
+                float theta = std::stof(parsed_cmd[1]);
+                float phi = std::stof(parsed_cmd[2]);
+                float r = std::stof(parsed_cmd[3]);
+                float posX = r * sin(glm::radians(theta)) * cos(glm::radians(phi));
+                float posY = r * sin(glm::radians(theta)) * sin(glm::radians(phi));
+                float posZ = r * cos(glm::radians(theta));
+                glm::vec3 position = glm::vec3(posX, posY, posZ);
+                newViewMatrix = glm::lookAt(
+                    position,                           // Camera is here
+                    glm::vec3(0, 0, 0),                 // and looks here : at the same position, plus "direction"
+                    glm::vec3(0, 0, 1)                  // Look in the z-direction (set to 0,0,1 to look upside-down)
+                );
+            }
+            else if (parsed_cmd[0] == "quit")
+                return 0;
+            else if (parsed_cmd[0] == "move")
+            {
+                std::string allmoves;
+                for (int i = 1; i < parsed_cmd.size(); i++)
+                {
+                    allmoves += " " + parsed_cmd[i];
+                }
+                engine.sendMove(allmoves);
+                engine.getResponseMove(allmoves);
+            }
+            else
+                std::cout << "Invalid command or move!!" << std::endl;
         }
-        else
+        catch (...)
+        {
             std::cout << "Invalid command or move!!" << std::endl;
+        }
 
     } // Check if the ESC key was pressed or the window was closed
     while( glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
