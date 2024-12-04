@@ -47,6 +47,7 @@ using namespace glm;
 // Sets up the chess board
 void setupChessBoard(tModelMap& cTModelMap);
 GLuint LightSwitchID;
+GLuint LightPowerID;
 std::vector<chessComponent> gchessComponents;
 tModelMap cTModelMap;
 GLuint MatrixID;
@@ -55,6 +56,7 @@ GLuint ModelMatrixID;
 GLuint LightID;
 GLuint TextureID;
 bool lightSwitch=true;
+float lightPower = 400.0;
 
 void renderNextFrame()
 {
@@ -100,6 +102,7 @@ void renderNextFrame()
             // the board!
             glm::vec3 lightPos = glm::vec3(0, 0, 15);
             glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
+            glUniform1f(LightPowerID, lightPower);
 
             // Bind our texture (set it up)
             cit->setupTexture(TextureID);
@@ -186,6 +189,7 @@ int main( void )
 
     // Get a handle for our "lightToggleSwitch" uniform
     LightSwitchID = glGetUniformLocation(programID, "lightSwitch");
+    LightPowerID = glGetUniformLocation(programID, "lightPower");
 
     // Create a vector of chess components class
     // Each component is fully self sufficient
@@ -227,20 +231,27 @@ int main( void )
     std::string cmd;
     std::vector<std::string> parsed_cmd;
 
-    do{
-      renderNextFrame();
-      std::cout << "Please enter a command: " << std::endl;
-      std::getline(std::cin, cmd);
-      parsed_cmd = parseInputCmd(cmd);
-      if (parsed_cmd[0] == "light")
-      {
-        if (parsed_cmd[1] == "1")
-            lightSwitch = true;
-        else if (parsed_cmd[1] == "0")
-            lightSwitch = false;
-        else
-            std::cout << "Invalid command or move" << std::endl;
-      }
+    do
+    {
+        renderNextFrame();
+        
+        std::cout << "Please enter a command: " << std::endl;
+        std::getline(std::cin, cmd);
+        parsed_cmd = parseInputCmd(cmd);
+        
+        if (parsed_cmd[0] == "light")
+        {
+            if (parsed_cmd[1] == "1")
+                lightSwitch = true;
+            else if (parsed_cmd[1] == "0")
+                lightSwitch = false;
+            else
+                std::cout << "Invalid command or move" << std::endl;
+        }
+        else if (parsed_cmd[0] == "power")
+        {
+            lightPower = std::stof(parsed_cmd[1]);
+        }
 
     } // Check if the ESC key was pressed or the window was closed
     while( glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
