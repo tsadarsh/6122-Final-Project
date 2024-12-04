@@ -43,6 +43,7 @@ using namespace glm;
 #include "chessComponent.h"
 #include "chessCommon.h"
 #include "helper_functions.hpp"
+#include "linux_main.cpp"
 
 // Sets up the chess board
 void setupChessBoard(tModelMap& cTModelMap);
@@ -236,6 +237,9 @@ int main( void )
                 glm::vec3(0, 0, 0),                 // and looks here : at the same position, plus "direction"
                 glm::vec3(0, 0, 1)                  // Look in the z-direction (set to 0,0,1 to look upside-down)
             );
+    ECE_Chess_Engine engine;
+    engine.InitializeEngine();
+
     do
     {
        renderNextFrame();
@@ -275,6 +279,15 @@ int main( void )
         }
         else if (parsed_cmd[0] == "quit")
             return 0;
+        else if (parsed_cmd[0] == "move")
+        {
+            std::string allmoves;
+            for (int i = 1; i < parsed_cmd.size(); i++)
+            {
+                allmoves += " " + parsed_cmd[i];
+            }
+            engine.sendMove(allmoves);
+        }
         else
             std::cout << "Invalid command or move!!" << std::endl;
 
