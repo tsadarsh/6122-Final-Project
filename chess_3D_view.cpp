@@ -273,6 +273,8 @@ int main( void )
                 glm::vec3(0, 0, 1)                  // Look in the z-direction (set to 0,0,1 to look upside-down)
             );
         }
+        else if (parsed_cmd[0] == "quit")
+            return 0;
         else
             std::cout << "Invalid command or move!!" << std::endl;
 
